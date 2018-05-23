@@ -1,7 +1,7 @@
-ILIAS HSLU Defaults Plugin
+Single Course Redirect
 ==========================
-This EventHook-Plugin sets Objects defaults according to what is needed at HSLU.
+This EventHook-Plugin redirects users (unless they belong to the global administrator role) to the newest course they were assigned to.
 
 Contact
 -------
-Hochschule Luzern
+webmaster@subclauses.net

@@ -51,7 +51,6 @@ class ilSingleCourseRedirectPlugin extends ilEventHookPlugin {
 	    		do {
 		    		$ref_id = $rbac->review()->getFoldersAssignedToRole(array_pop($roles), true);
 	    			$node = $DIC->repositoryTree()->getNodeData($ref_id[0]);
-	    			file_put_contents('test.txt', serialize($roles), FILE_APPEND);
 	    		} while ($node['type'] != 'crs' && isset($roles[0]));
 	    	
 	    		if ($node['type'] == 'crs') {
