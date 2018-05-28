@@ -1,5 +1,6 @@
 <?php
 require_once './Services/EventHandling/classes/class.ilEventHookPlugin.php';
+require_once 'Services/User/classes/class.ilUserUtil.php';
 
 /**
  * Class ilSingleCourseRedirectPlugin
@@ -40,21 +41,43 @@ class ilSingleCourseRedirectPlugin extends ilEventHookPlugin {
 	 * @param    array         array of event specific parameters
 	 */
 	public function handleEvent($a_component, $a_event, $a_parameter) {
+
 	    if($a_component == 'Services/Authentication' && $a_event == 'afterLogin')
 	    {
 	    	global $DIC;
 	    	$rbac = $DIC->rbac();
-	    	$usr_id = $DIC->user()->getId();
-	    	$roles = $rbac->review()->assignedRoles($usr_id);
-
-	    	if (!in_array('2', $roles)) {
+	    	$usr = $DIC->user();
+	    	$roles = $rbac->review()->assignedRoles($usr->getId());
+	    	
+	    	if (in_array('2', $roles)) {
+	    		if (ilUserUtil::hasPersonalStartingPoint()) {
+	    			ilUserUtil::setPersonalStartingPoint(0);
+	    			$usr->writePrefs();
+	    		}
+	    	} else if (in_array('4', $roles)) {
+	    		foreach ($roles as $role) {
+	    			if (!$rbac->review()->isGlobalRole($role)) {
+	    				$role_title = substr(ilObject::_lookupTitle($role), 3, 9);
+	    				if ($role_title == 'crs_admin' || $role_title == 'crs_tutor') {
+	    					ilUserUtil::setPersonalStartingPoint(0);
+	    					$usr->writePrefs();
+	    					return;
+	    				}
+	    			}
+	    		}
+	    		
 	    		do {
 		    		$ref_id = $rbac->review()->getFoldersAssignedToRole(array_pop($roles), true);
 	    			$node = $DIC->repositoryTree()->getNodeData($ref_id[0]);
 	    		} while ($node['type'] != 'crs' && isset($roles[0]));
 	    	
 	    		if ($node['type'] == 'crs') {
-		    		$DIC->ctrl()->redirectToURL(ilLink::_getLink($node['ref_id']));
+	    			if (!ilUserUtil::hasPersonalStartPointPref() || ilUserUtil::getStartingPoint() != ilUserUtil::START_REPOSITORY_OBJ || ilUserUtil::getPersonalStartingObject() != $node['ref_id']) {
+	    						ilUserUtil::setPersonalStartingPoint(ilUserUtil::START_REPOSITORY_OBJ, $node['ref_id']);
+	    						$usr->writePrefs();
+	    			}
+	    		} else {
+	    			
 	    		}
 	    	}
 	    }
